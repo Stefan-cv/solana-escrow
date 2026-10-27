@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "programs/*"
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.89.0"
+
+# NOTE: no `lto = "fat"` here on purpose. With fat LTO the PDA derivation
+# (curve25519) gets inlined into `Take::try_accounts` and the SBF stack
+# frame exceeds the 4096-byte limit ("Access violation in stack frame"),
+# crashing the take instruction at runtime.
+[profile.release]
+overflow-checks = true
