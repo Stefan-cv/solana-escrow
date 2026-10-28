@@ -8,9 +8,10 @@ resolver = "2"
 edition = "2021"
 rust-version = "1.89.0"
 
-# NOTE: no `lto = "fat"` here on purpose. With fat LTO the PDA derivation
-# (curve25519) gets inlined into `Take::try_accounts` and the SBF stack
-# frame exceeds the 4096-byte limit ("Access violation in stack frame"),
-# crashing the take instruction at runtime.
+# NOTE: this workspace intentionally differs from solana-vault's profile.
+# The original fat-LTO settings were removed while chasing a 4424-byte
+# `Take::try_accounts` stack frame (SBF limit: 4096); it turned out LTO was
+# not the driver — the real fix was reducing validated accounts in `Take`
+# (see DESIGN.md §6). The leaner profile is kept; the vault keeps its own.
 [profile.release]
 overflow-checks = true
