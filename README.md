@@ -106,17 +106,28 @@ programs/solana-escrow/tests/test_escrow.rs   # LiteSVM integration tests
 - SPL Token + Associated Token Account programs
 - LiteSVM for in-process integration tests
 
-## Deploying to devnet
+## Deployed on devnet ✅
 
-The program id is held in `target/deploy/solana_escrow-keypair.json`
-(`76MxqbNrmaQMhTRUNB6uXeAsMoDGs1eBCUCcRMXmaUuQ`).
+The program is **live on devnet** and publicly verifiable:
+
+- Program id: [`76MxqbNrmaQMhTRUNB6uXeAsMoDGs1eBCUCcRMXmaUuQ`](https://explorer.solana.com/address/76MxqbNrmaQMhTRUNB6uXeAsMoDGs1eBCUCcRMXmaUuQ?cluster=devnet)
+- Upgrade authority: the deployer keypair (`~/.config/solana/id.json`)
+
+To redeploy from scratch:
 
 ```bash
 solana config set --url devnet
 # [provider] cluster = "devnet" in Anchor.toml
-solana airdrop 2          # deploy needs ~3 SOL
+# fund via https://faucet.solana.com (CLI airdrop is often rate-limited);
+# deploy needs ~3 SOL
 anchor build && anchor deploy
 ```
+
+On throttled networks: a 429-interrupted deploy leaves a resumable upgrade
+buffer — re-run to continue, or use
+`solana program deploy --use-rpc --max-sign-attempts 200` to push all
+writes through the RPC endpoint (TPU/QUIC traffic bypasses HTTP proxies
+and will time out there).
 
 ## Roadmap
 
