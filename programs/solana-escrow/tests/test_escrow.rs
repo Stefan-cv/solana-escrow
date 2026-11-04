@@ -21,10 +21,7 @@ use {
         },
         AccountDeserialize, InstructionData, ToAccountMetas,
     },
-    anchor_spl::{
-        associated_token::ID as ATA_PROGRAM_ID,
-        token::ID as TOKEN_PROGRAM_ID,
-    },
+    anchor_spl::{associated_token::ID as ATA_PROGRAM_ID, token::ID as TOKEN_PROGRAM_ID},
     litesvm::LiteSVM,
     solana_keypair::Keypair,
     solana_message::{Message, VersionedMessage},
@@ -57,7 +54,12 @@ fn spl_initialize_mint2(mint: &Pubkey, mint_authority: &Pubkey, decimals: u8) ->
     )
 }
 
-fn spl_mint_to(mint: &Pubkey, destination: &Pubkey, authority: &Pubkey, amount: u64) -> Instruction {
+fn spl_mint_to(
+    mint: &Pubkey,
+    destination: &Pubkey,
+    authority: &Pubkey,
+    amount: u64,
+) -> Instruction {
     let mut data = Vec::with_capacity(9);
     data.push(7u8); // TokenInstruction::MintTo
     data.extend_from_slice(&amount.to_le_bytes());
@@ -147,7 +149,7 @@ impl TestEnv {
             &TOKEN_PROGRAM_ID,
         );
         let init_ix = spl_initialize_mint2(&mint, &payer.pubkey(), 9);
-        send_ok(svm, &[create_ix, init_ix], &[&payer, &mint_keypair]);
+        send_ok(svm, &[create_ix, init_ix], &[payer, &mint_keypair]);
         mint
     }
 
@@ -292,21 +294,16 @@ fn send(svm: &mut LiteSVM, ixs: &[Instruction], signers: &[&Keypair]) -> Result<
     let blockhash = svm.latest_blockhash();
     let msg = Message::new_with_blockhash(ixs, Some(&signers[0].pubkey()), &blockhash);
     let tx = VersionedTransaction::try_new(VersionedMessage::Legacy(msg), signers).unwrap();
-    svm.send_transaction(tx).map(|_| ()).map_err(|e| {
-        format!("{}; logs:\n{}", e.err, e.meta.pretty_logs())
-    })
+    svm.send_transaction(tx)
+        .map(|_| ())
+        .map_err(|e| format!("{}; logs:\n{}", e.err, e.meta.pretty_logs()))
 }
 
 fn send_ok(svm: &mut LiteSVM, ixs: &[Instruction], signers: &[&Keypair]) {
     send(svm, ixs, signers).unwrap_or_else(|e| panic!("transaction failed: {e}"));
 }
 
-fn send_expect_custom_err(
-    svm: &mut LiteSVM,
-    ixs: &[Instruction],
-    signers: &[&Keypair],
-    code: u32,
-) {
+fn send_expect_custom_err(svm: &mut LiteSVM, ixs: &[Instruction], signers: &[&Keypair], code: u32) {
     match send(svm, ixs, signers) {
         Ok(()) => panic!("expected transaction to fail with error {code}"),
         Err(e) => {
@@ -465,15 +462,12 @@ fn only_maker_can_cancel() {
 
     // The attacker signs a cancel; the escrow PDA derived from the
     // attacker's key does not exist, so the order is never reachable.
-    env.svm
-        .airdrop(&attacker.pubkey(), 1_000_000_000)
-        .unwrap();
+    env.svm.airdrop(&attacker.pubkey(), 1_000_000_000).unwrap();
     let (attacker_escrow_pda, _) = env.escrow_pdas(&attacker.pubkey(), 5);
     let ix = env.cancel_ix(&attacker.pubkey(), 5, &alice_ata_a);
     let err = send(&mut env.svm, &[ix], &[&attacker]).unwrap_err();
     assert!(
-        err.contains(&attacker_escrow_pda.to_string())
-            || err.contains("custom program error"),
+        err.contains(&attacker_escrow_pda.to_string()) || err.contains("custom program error"),
         "expected rejection, got: {err}"
     );
 
